@@ -1,0 +1,14 @@
+{
+  "name": "ims-be",
+  "version": "1.0.0",
+  "description": "this is ipl management system backend",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node home"
+  },
+  "author": "Trushti",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
