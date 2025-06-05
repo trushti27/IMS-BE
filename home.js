@@ -1,4 +1,4 @@
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const libExpress = require("express")
 const libRandomString=require("randomstring")
 const cors = require("cors")
@@ -91,24 +91,95 @@ server.post("/token", async(req, res) => {
                     {_id: user._id},
                     {$set: {token: token }}
             )
-
+            console.log(token)
             //return token
-            res.status(200).json({token:token});
+            res.status(200).json({"token": token});
         }
         else
         {
             res.status(400).json({err: "inavalid id or password!!"})
         }
-
+    connection.close()
     }
     else
     res.status(401).json({err: "missing required field"})
     
 })
 
-server.get("/user/roles",(req,res)=>{
-    if()
+//get roles of users
+server.get("/users/roles",async(req,res)=>{
+    if(req.headers.token)
+    {
+        await connection.connect()
+        const db=await connection.db('ims')
+        const collection= await db.collection('user')
+        const result= await collection.find({"token": req.headers.token}).toArray()
+        if(result.length>0)
+        {
+            const user=result[0]
+            const roles={
+                admin: user.is_admin===true,
+                owner:!!user.owner_of,
+                player:!!user.playing_for
+            }
+           // console.log(roles)
+            res.status(200).json(roles)
+        }
+        else{
+            res.status(400).json({err:"invalid token"})
+        }
+        connection.close();
+    }
+    else
+    {
+        res.status(401).json({token:"missing token"})
+    }
 })
+
+//players detail
+server.get("/players",async(req,res)=>{
+    
+        await connection.connect()
+        const db=await connection.db('ims')
+        const collection= await db.collection('user')
+        const result= await collection.find({playing_for: {$exists: true}}).toArray()
+        //console.log(result)
+        res.status(200).json(result)
+
+        connection.close()
+}
+)
+
+//team detail
+server.get("/teams",async(req,res)=>{
+    
+        await connection.connect()
+        const db=await connection.db('ims')
+        const collection= await db.collection('team')
+       const result= await collection.find().toArray()
+       // console.log(result)
+        res.status(200).json(result)
+
+        connection.close()
+}
+)
+
+//player stats
+server.get("/players/:id/stats",async(req,res)=>{
+    if(req.params.id)
+    {
+         await connection.connect()
+        const db=await connection.db('ims')
+        const collection= await db.collection('user')
+        const result= await collection.findOne({"_id": new ObjectId(req.params.id)})
+        //console.log(result)
+        res.status(200).json(result)
+
+        connection.close()
+}
+    }
+       
+)
 
 server.listen(8000, () => {
     console.log("Server is listing over port 8000");
