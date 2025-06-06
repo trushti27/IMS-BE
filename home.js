@@ -180,6 +180,42 @@ server.get("/players/:id/stats",async(req,res)=>{
     }
        
 )
+//team management-backend
+
+server.get("/teamManage", async (req, res) => {
+  try {
+    if (!req.headers.token) return res.status(401).json({ error: "Unauthorized" });
+
+    await connection.connect();
+    const db = connection.db('ims');
+
+    const users = db.collection('user');
+    const teams = db.collection('team');
+
+    // Find the user by token
+    const user = await users.findOne({ token: req.headers.token });
+
+    if (!user || !user.owner_of) {
+      res.status(401).json({ error: "User or team not found" });
+    }
+
+    // Find the team using the user's owner_of field
+    const team = await teams.findOne({ id: user.owner_of });
+
+    if  (!team){
+      res.status(401).json({ error: "Team not found" });
+    }
+
+    res.status(200).json(team);
+  } 
+  catch (err) {
+    console.error("Error in /teamManage:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  } 
+    connection.close();
+
+});
+
 
 server.listen(8000, () => {
     console.log("Server is listing over port 8000");
